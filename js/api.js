@@ -33,10 +33,11 @@ const API = {
   getSettings:       ()       => API.get('getSettings'),
 
   // 機械台帳
-  getEquipment:      (p={})  => API.get('getEquipment', p),
-  getEquipmentById:  (id)    => API.get('getEquipmentById', { id }),
-  saveEquipment:     (data)  => API.post('saveEquipment', { data }),
-  deleteEquipment:   (id)    => API.post('deleteEquipment', { id }),
+  getEquipment:        (p={})                      => API.get('getEquipment', p),
+  getEquipmentById:    (id)                        => API.get('getEquipmentById', { id }),
+  saveEquipment:       (data)                      => API.post('saveEquipment', { data }),
+  deleteEquipment:     (id)                        => API.post('deleteEquipment', { id }),
+  saveEquipmentPhoto:  (id, base64, mimeType)      => API.post('saveEquipmentPhoto', { id, base64, mimeType }),
 
   // 整備記録
   getMaintenance:    (p={})  => API.get('getMaintenance', p),

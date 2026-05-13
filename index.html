@@ -7,39 +7,91 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="css/style.css">
+<style>
+/* ========== 機械カード ========== */
+.machine-card {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.09);
+  cursor: pointer;
+  transition: box-shadow .15s, transform .15s;
+  height: 100%;
+}
+.machine-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.15); transform: translateY(-2px); }
+.machine-card .photo-area {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #f0f4f0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.machine-card .photo-area img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.machine-card .photo-area .no-photo {
+  color: #c8d6c8;
+  font-size: 3rem;
+}
+.machine-card .overdue-badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: #dc3545;
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.machine-card .card-body { padding: 10px 12px 12px; }
+.machine-card .machine-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.machine-card .machine-type { font-size: 0.75rem; color: #6c757d; margin-bottom: 6px; }
+.machine-card .meta-row { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; color: #555; }
+.machine-card .meta-row i { color: #198754; font-size: 0.8rem; }
+
+/* ========== 統計バー ========== */
+.stat-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-chip {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.stat-chip .num { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+.stat-chip .lbl { font-size: 0.68rem; color: #6c757d; margin-top: 2px; }
+</style>
 </head>
 <body>
 
-<!-- トップナビ -->
 <nav class="navbar navbar-dark bg-success px-3">
   <span class="navbar-brand"><i class="bi bi-wrench-adjustable me-2"></i>機械設備管理</span>
   <div class="d-none d-md-flex gap-3">
-    <a href="index.html"      class="nav-link text-white" data-nav="index.html">ホーム</a>
-    <a href="equipment.html"  class="nav-link text-white" data-nav="equipment.html">機械台帳</a>
-    <a href="maintenance.html"class="nav-link text-white" data-nav="maintenance.html">整備</a>
-    <a href="inventory.html"  class="nav-link text-white" data-nav="inventory.html">在庫</a>
-    <a href="settings.html"   class="nav-link text-white" data-nav="settings.html">設定</a>
+    <a href="index.html"       class="nav-link text-white fw-bold" data-nav="index.html">ホーム</a>
+    <a href="equipment.html"   class="nav-link text-white" data-nav="equipment.html">機械台帳</a>
+    <a href="maintenance.html" class="nav-link text-white" data-nav="maintenance.html">整備</a>
+    <a href="inventory.html"   class="nav-link text-white" data-nav="inventory.html">在庫</a>
+    <a href="settings.html"    class="nav-link text-white" data-nav="settings.html">設定</a>
   </div>
 </nav>
 
-<!-- コンテンツ -->
-<div class="container-fluid px-3 pt-3">
-  <div class="page-title"><i class="bi bi-speedometer2 me-2 text-success"></i>ダッシュボード</div>
-  <div id="content">
-    <div class="text-center py-5 text-muted">
-      <div class="spinner-border spinner-border-sm me-2" role="status"></div>読み込み中...
-    </div>
+<div class="container-fluid px-3 pt-3" id="pageRoot">
+  <div class="text-center py-5 text-muted">
+    <div class="spinner-border spinner-border-sm me-2"></div>読み込み中...
   </div>
 </div>
 
 <!-- 下タブバー -->
 <nav class="bottom-nav d-md-none">
-  <a href="index.html" class="nav-item" data-nav="index.html">
-    <i class="bi bi-house-fill"></i>ホーム
-  </a>
-  <a href="equipment.html" class="nav-item" data-nav="equipment.html">
-    <i class="bi bi-truck"></i>機械
-  </a>
+  <a href="index.html" class="nav-item active" data-nav="index.html"><i class="bi bi-house-fill"></i>ホーム</a>
+  <a href="equipment.html" class="nav-item" data-nav="equipment.html"><i class="bi bi-truck"></i>機械</a>
   <a href="maintenance.html" class="nav-item" data-nav="maintenance.html">
     <i class="bi bi-tools"></i>整備
     <span id="overdueBadge" class="badge rounded-pill bg-danger" style="display:none"></span>
@@ -48,9 +100,7 @@
     <i class="bi bi-box-seam"></i>在庫
     <span id="lowstockBadge" class="badge rounded-pill bg-warning" style="display:none"></span>
   </a>
-  <a href="menu.html" class="nav-item" data-nav="menu.html">
-    <i class="bi bi-grid"></i>メニュー
-  </a>
+  <a href="menu.html" class="nav-item" data-nav="menu.html"><i class="bi bi-grid"></i>メニュー</a>
 </nav>
 
 <!-- 確認ダイアログ -->
@@ -68,7 +118,7 @@
 
 <!-- トースト -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1100">
-  <div id="toast" class="toast align-items-center text-bg-success border-0" role="alert">
+  <div id="toast" class="toast align-items-center text-bg-success border-0">
     <div class="d-flex">
       <div class="toast-body" id="toastBody"></div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -82,109 +132,140 @@
 <script src="js/app.js"></script>
 <script>
 (async () => {
-  const content = document.getElementById('content');
+  const root = document.getElementById('pageRoot');
   try {
     const data = await API.getDashboard();
-    const overdueRows = data.overdueSchedules.map(s => `
-      <div class="list-item" onclick="location.href='schedule.html'">
-        <div class="d-flex justify-content-between align-items-start">
+
+    // ナビバッジ更新
+    const ob = document.getElementById('overdueBadge');
+    const lb = document.getElementById('lowstockBadge');
+    if (ob) { ob.textContent = data.overdueCount || ''; ob.style.display = data.overdueCount > 0 ? '' : 'none'; }
+    if (lb) { lb.textContent = data.lowStockCount || ''; lb.style.display = data.lowStockCount > 0 ? '' : 'none'; }
+
+    // 機械カード
+    const machineCards = (data.equipmentList || []).map(eq => {
+      const photoHtml = eq.photo_url
+        ? `<img src="${escHtml(eq.photo_url)}" alt="${escHtml(eq.name)}" loading="lazy">`
+        : `<i class="bi bi-truck no-photo"></i>`;
+      const overdueHtml = eq.hasOverdue
+        ? `<span class="overdue-badge"><i class="bi bi-exclamation-triangle-fill me-1"></i>要整備</span>` : '';
+      const lastMaint = eq.last_maintenance_date
+        ? `<div class="meta-row"><i class="bi bi-tools"></i>最終: ${escHtml(eq.last_maintenance_date)}</div>` : '';
+      const nextSched = eq.next_schedule_date
+        ? `<div class="meta-row ${new Date(eq.next_schedule_date) < new Date() ? 'text-danger' : ''}">
+             <i class="bi bi-calendar-event"></i>次回: ${escHtml(eq.next_schedule_date)}
+           </div>` : '';
+      const hours = eq.current_hours
+        ? `<div class="meta-row"><i class="bi bi-speedometer2"></i>${fmtNum(eq.current_hours, 1)} h</div>` : '';
+
+      return `
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="machine-card" onclick="location.href='equipment.html#${escHtml(eq.id)}'">
+            <div class="photo-area">
+              ${photoHtml}
+              ${overdueHtml}
+            </div>
+            <div class="card-body">
+              <div class="machine-name" title="${escHtml(eq.name)}">${escHtml(eq.name)}</div>
+              <div class="machine-type">${escHtml(eq.machine_type_name || '-')}</div>
+              ${hours}${lastMaint}${nextSched}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // 警告リスト
+    const overdueRows = (data.overdueSchedules || []).map(s => `
+      <div class="list-item" onclick="location.href='maintenance.html'">
+        <div class="d-flex justify-content-between align-items-center">
           <div>
             <span class="badge bg-danger me-1">期限超過</span>
-            <span class="title">${escHtml(s.equipment_name)} - ${escHtml(s.maintenance_type_name)}</span>
+            <strong>${escHtml(s.equipment_name)}</strong>
+            <span class="text-muted ms-1 small">${escHtml(s.maintenance_type_name)}</span>
           </div>
-          <small class="text-danger">${escHtml(s.scheduled_date)}</small>
+          <small class="text-danger fw-bold">${escHtml(s.scheduled_date)}</small>
         </div>
       </div>`).join('');
 
-    const upcomingRows = data.upcomingSchedules.map(s => `
-      <div class="list-item" onclick="location.href='schedule.html'">
-        <div class="d-flex justify-content-between align-items-start">
+    const upcomingRows = (data.upcomingSchedules || []).map(s => `
+      <div class="list-item" onclick="location.href='maintenance.html'">
+        <div class="d-flex justify-content-between align-items-center">
           <div>
             <span class="badge bg-warning text-dark me-1">7日以内</span>
-            <span class="title">${escHtml(s.equipment_name)} - ${escHtml(s.maintenance_type_name)}</span>
+            <strong>${escHtml(s.equipment_name)}</strong>
+            <span class="text-muted ms-1 small">${escHtml(s.maintenance_type_name)}</span>
           </div>
-          <small class="text-warning">${escHtml(s.scheduled_date)}</small>
+          <small class="text-warning fw-bold">${escHtml(s.scheduled_date)}</small>
         </div>
       </div>`).join('');
 
-    const lowStockRows = data.lowStockItems.map(i => `
+    const lowStockRows = (data.lowStockItems || []).map(i => `
       <div class="list-item" onclick="location.href='inventory.html'">
-        <div class="d-flex justify-content-between">
-          <span class="title">${escHtml(i.name)}</span>
-          <span class="stock-low">${escHtml(String(i.current_stock))} ${escHtml(i.unit)}（最低: ${escHtml(String(i.minimum_stock))}）</span>
+        <div class="d-flex justify-content-between align-items-center">
+          <strong>${escHtml(i.name)}</strong>
+          <span class="stock-low">${fmtNum(i.current_stock, 1)} ${escHtml(i.unit || '')}（残少）</span>
         </div>
       </div>`).join('');
 
-    const recentOpsRows = data.recentOps.map(op => `
-      <div class="list-item">
-        <div class="d-flex justify-content-between">
-          <span class="title">${escHtml(op.equipment_name)}</span>
-          <small class="text-muted">${escHtml(op.log_date)}</small>
+    root.innerHTML = `
+      <!-- 統計バー -->
+      <div class="stat-bar">
+        <div class="stat-chip">
+          <div class="num text-success">${data.equipmentCount}</div>
+          <div class="lbl">登録機械</div>
         </div>
-        <div class="sub">${escHtml(op.work_type || '')} ${op.field_name ? '/ ' + escHtml(op.field_name) : ''}</div>
-      </div>`).join('');
-
-    content.innerHTML = `
-      <!-- 統計カード -->
-      <div class="row g-2 mb-3">
-        <div class="col-4">
-          <div class="card stat-card">
-            <div class="stat-num text-success">${data.equipmentCount}</div>
-            <div class="stat-label">登録機械</div>
-          </div>
+        <div class="stat-chip">
+          <div class="num ${data.overdueCount > 0 ? 'text-danger' : 'text-muted'}">${data.overdueCount}</div>
+          <div class="lbl">整備期限超過</div>
         </div>
-        <div class="col-4">
-          <div class="card stat-card">
-            <div class="stat-num ${data.overdueCount > 0 ? 'text-danger' : 'text-muted'}">${data.overdueCount}</div>
-            <div class="stat-label">期限超過</div>
-          </div>
-        </div>
-        <div class="col-4">
-          <div class="card stat-card">
-            <div class="stat-num ${data.lowStockCount > 0 ? 'text-warning' : 'text-muted'}">${data.lowStockCount}</div>
-            <div class="stat-label">在庫不足</div>
-          </div>
+        <div class="stat-chip">
+          <div class="num ${data.lowStockCount > 0 ? 'text-warning' : 'text-muted'}">${data.lowStockCount}</div>
+          <div class="lbl">在庫不足</div>
         </div>
       </div>
 
-      ${data.overdueSchedules.length > 0 ? `
-      <div class="section-header">
-        <h6><i class="bi bi-exclamation-triangle-fill me-1"></i>期限超過の整備</h6>
-        <a href="schedule.html" class="small text-success">すべて見る</a>
+      <!-- 機械一覧 -->
+      <div class="section-header mb-3">
+        <h6><i class="bi bi-truck me-1"></i>登録機械</h6>
+        <a href="equipment.html" class="small text-success">すべて見る →</a>
       </div>
-      ${overdueRows}` : ''}
+      ${data.equipmentCount === 0
+        ? `<div class="empty-state mb-3"><i class="bi bi-truck"></i>機械が登録されていません<br>
+           <a href="equipment.html" class="btn btn-success btn-sm mt-2"><i class="bi bi-plus-lg me-1"></i>機械を登録する</a></div>`
+        : `<div class="row g-2 mb-3">${machineCards}</div>`
+      }
 
-      ${data.upcomingSchedules.length > 0 ? `
-      <div class="section-header mt-3">
-        <h6><i class="bi bi-calendar-event me-1"></i>今後7日以内の整備</h6>
-        <a href="schedule.html" class="small text-success">すべて見る</a>
-      </div>
-      ${upcomingRows}` : ''}
+      <!-- 警告セクション -->
+      ${overdueRows ? `
+      <div class="section-header mb-2 mt-3">
+        <h6 class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>整備期限超過</h6>
+        <a href="maintenance.html" class="small text-success">すべて見る →</a>
+      </div>${overdueRows}` : ''}
 
-      ${data.lowStockItems.length > 0 ? `
-      <div class="section-header mt-3">
-        <h6><i class="bi bi-box-seam me-1"></i>在庫不足</h6>
-        <a href="inventory.html" class="small text-success">すべて見る</a>
-      </div>
-      ${lowStockRows}` : ''}
+      ${upcomingRows ? `
+      <div class="section-header mb-2 mt-3">
+        <h6 class="text-warning"><i class="bi bi-calendar-event me-1"></i>今後7日以内の整備</h6>
+        <a href="maintenance.html" class="small text-success">すべて見る →</a>
+      </div>${upcomingRows}` : ''}
 
-      ${data.recentOps.length > 0 ? `
-      <div class="section-header mt-3">
-        <h6><i class="bi bi-activity me-1"></i>最近の稼働記録</h6>
-        <a href="operation.html" class="small text-success">すべて見る</a>
-      </div>
-      ${recentOpsRows}` : ''}
+      ${lowStockRows ? `
+      <div class="section-header mb-2 mt-3">
+        <h6 class="text-danger"><i class="bi bi-box-seam me-1"></i>在庫不足</h6>
+        <a href="inventory.html" class="small text-success">すべて見る →</a>
+      </div>${lowStockRows}` : ''}
 
-      ${data.overdueSchedules.length === 0 && data.upcomingSchedules.length === 0 && data.lowStockItems.length === 0 ? `
-      <div class="card mt-3">
-        <div class="card-body text-center text-success py-4">
-          <i class="bi bi-check-circle-fill" style="font-size:2rem"></i>
-          <div class="mt-2">問題なし！すべて正常です</div>
+      ${!overdueRows && !upcomingRows && !lowStockRows && data.equipmentCount > 0 ? `
+      <div class="card mt-2">
+        <div class="card-body text-center text-success py-3">
+          <i class="bi bi-check-circle-fill fs-3"></i>
+          <div class="mt-1">問題なし！すべて正常です</div>
         </div>
       </div>` : ''}
+      <div style="height:8px"></div>
     `;
   } catch(e) {
-    showError(content, 'データ読み込みエラー: ' + e.message);
+    root.innerHTML = `<div class="alert alert-danger m-3">
+      <i class="bi bi-exclamation-triangle me-1"></i>読み込みエラー: ${escHtml(e.message)}</div>`;
   }
 })();
 </script>
