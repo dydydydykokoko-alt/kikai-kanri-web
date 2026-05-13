@@ -371,7 +371,7 @@ async function openForm(eq = null) {
   bootstrap.Modal.getOrCreateInstance(document.getElementById('formModal')).show();
 }
 
-// 写真プレビュー＆圧縮（スプレッドシート保存用に小さく圧縮）
+// 写真プレビュー＆圧縮
 function previewPhoto(input) {
   const file = input.files[0];
   if (!file) return;
@@ -379,20 +379,24 @@ function previewPhoto(input) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      // 最大500px・品質0.65に圧縮（スプレッドシートセルに収まるサイズ）
-      const MAX = 500;
+      // 最大320px・品質0.55（スプレッドシートセル上限50,000文字に収まる）
+      const MAX = 320;
       let w = img.width, h = img.height;
       if (w > h) { h = Math.round(h * Math.min(MAX,w) / w); w = Math.min(MAX,w); }
       else        { w = Math.round(w * Math.min(MAX,h) / h); h = Math.min(MAX,h); }
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.55);
+      const sizeKB = Math.round(dataUrl.length * 0.75 / 1024);
 
       document.getElementById('photoDataUrl').value = dataUrl;
       document.getElementById('photoPreview').innerHTML =
         `<img src="${dataUrl}" class="img-fluid rounded" style="max-height:180px">
-         <div class="upload-hint mt-2">タップして写真を変更</div>`;
+         <div class="upload-hint mt-2 text-success">
+           <i class="bi bi-check-circle me-1"></i>写真を選択しました（約${sizeKB}KB）<br>
+           <small class="text-muted">タップして変更</small>
+         </div>`;
       document.getElementById('photoUploadArea').classList.add('has-photo');
     };
     img.src = e.target.result;
@@ -432,7 +436,12 @@ async function saveEquipment() {
     showToast(data.id ? '更新しました' : '登録しました');
     loadList();
   } catch(e) {
-    alert('保存エラー: ' + e.message);
+    const msg = e.message || String(e);
+    if (msg.includes('exceed') || msg.includes('large') || msg.includes('character')) {
+      alert('写真のサイズが大きすぎます。\n別の写真を選択してください。');
+    } else {
+      alert('保存エラー: ' + msg);
+    }
   } finally {
     saveBtn.disabled = false;
     saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>保存';
