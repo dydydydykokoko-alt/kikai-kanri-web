@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>整備記録 - 機械設備管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-success px-3">
+  <span class="navbar-brand"><i class="bi bi-wrench-adjustable me-2"></i>機械設備管理</span>
+  <div class="d-none d-md-flex gap-3">
+    <a href="index.html"      class="nav-link text-white" data-nav="index.html">ホーム</a>
+    <a href="equipment.html"  class="nav-link text-white" data-nav="equipment.html">機械台帳</a>
+    <a href="maintenance.html"class="nav-link text-white fw-bold" data-nav="maintenance.html">整備</a>
+    <a href="inventory.html"  class="nav-link text-white" data-nav="inventory.html">在庫</a>
+    <a href="settings.html"   class="nav-link text-white" data-nav="settings.html">設定</a>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 pt-3">
+  <!-- タブ -->
+  <ul class="nav nav-pills nav-fill mb-3">
+    <li class="nav-item"><a class="nav-link active" data-tab="records" href="#">整備記録</a></li>
+    <li class="nav-item"><a class="nav-link" data-tab="schedules" href="#">スケジュール</a></li>
+  </ul>
+  <div id="content">
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>読み込み中...
+    </div>
+  </div>
+</div>
+
+<button class="btn btn-success btn-fab shadow" onclick="openForm()"><i class="bi bi-plus-lg"></i></button>
+
+<nav class="bottom-nav d-md-none">
+  <a href="index.html" class="nav-item" data-nav="index.html"><i class="bi bi-house-fill"></i>ホーム</a>
+  <a href="equipment.html" class="nav-item" data-nav="equipment.html"><i class="bi bi-truck"></i>機械</a>
+  <a href="maintenance.html" class="nav-item active" data-nav="maintenance.html">
+    <i class="bi bi-tools"></i>整備
+    <span id="overdueBadge" class="badge rounded-pill bg-danger" style="display:none"></span>
+  </a>
+  <a href="inventory.html" class="nav-item" data-nav="inventory.html">
+    <i class="bi bi-box-seam"></i>在庫
+    <span id="lowstockBadge" class="badge rounded-pill bg-warning" style="display:none"></span>
+  </a>
+  <a href="menu.html" class="nav-item" data-nav="menu.html"><i class="bi bi-grid"></i>メニュー</a>
+</nav>
+
+<!-- 整備記録フォームモーダル -->
+<div class="modal fade" id="formModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h6 class="modal-title" id="formTitle">整備記録を追加</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="formBody">
+        <form id="maintForm">
+          <input type="hidden" id="maintId">
+          <input type="hidden" id="maintFormType" value="record">
+          <div class="mb-3">
+            <label class="form-label fw-bold">機械 <span class="text-danger">*</span></label>
+            <select class="form-select" id="maintEquipment" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">整備種別 <span class="text-danger">*</span></label>
+            <select class="form-select" id="maintType" required></select>
+          </div>
+
+          <!-- 記録用フィールド -->
+          <div id="recordFields">
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">実施日 <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="maintDate">
+              </div>
+              <div class="col-6">
+                <label class="form-label">時間(h)</label>
+                <input type="number" class="form-control" id="maintHours" min="0" step="0.1">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">費用(円)</label>
+                <input type="number" class="form-control" id="maintCost" min="0">
+              </div>
+              <div class="col-6">
+                <label class="form-label">実施者</label>
+                <input type="text" class="form-control" id="maintPerformedBy">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">整備業者</label>
+              <input type="text" class="form-control" id="maintShop">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">次回整備日</label>
+              <input type="date" class="form-control" id="maintNextDate">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">使用パーツ</label>
+              <select class="form-select" id="maintInventory">
+                <option value="">なし</option>
+              </select>
+            </div>
+            <div class="mb-3" id="usedQtyGroup" style="display:none">
+              <label class="form-label">使用数量</label>
+              <input type="number" class="form-control" id="maintUsedQty" min="0" step="0.1">
+            </div>
+          </div>
+
+          <!-- スケジュール用フィールド -->
+          <div id="scheduleFields" style="display:none">
+            <div class="mb-3">
+              <label class="form-label fw-bold">予定日 <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="schedDate">
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">繰り返し(日)</label>
+                <input type="number" class="form-control" id="schedIntervalDays" min="0" placeholder="0=なし">
+              </div>
+              <div class="col-6">
+                <label class="form-label">繰り返し(h)</label>
+                <input type="number" class="form-control" id="schedIntervalHours" min="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">メモ</label>
+            <textarea class="form-control" id="maintDesc" rows="2"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <button class="btn btn-success px-4" onclick="saveMaint()">
+          <i class="bi bi-check-lg me-1"></i>保存
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 確認ダイアログ -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body py-4 text-center" id="confirmMsg"></div>
+      <div class="modal-footer border-0 justify-content-center gap-2">
+        <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">キャンセル</button>
+        <button class="btn btn-danger px-4" id="confirmOkBtn">削除する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1100">
+  <div id="toast" class="toast align-items-center text-bg-success border-0">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+let masters = null;
+let currentTab = 'records';
+
+// タブ切り替え
+document.querySelectorAll('[data-tab]').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentTab = el.dataset.tab;
+    loadContent();
+  });
+});
+
+async function loadPage() {
+  masters = await getMasters();
+  await loadContent();
+}
+
+async function loadContent() {
+  if (currentTab === 'records') await loadRecords();
+  else await loadSchedules();
+}
+
+async function loadRecords() {
+  const content = document.getElementById('content');
+  showLoading(content);
+  try {
+    const list = await API.getMaintenance({ limit: 50 });
+    if (list.length === 0) {
+      content.innerHTML = `<div class="empty-state"><i class="bi bi-tools"></i>整備記録がありません</div>`;
+      return;
+    }
+    content.innerHTML = list.map(r => `
+      <div class="list-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="title">${escHtml(r.equipment_name)}</div>
+            <div class="sub">${escHtml(r.maintenance_type_name)} ${r.hours_at_service ? '/ ' + fmtNum(r.hours_at_service,1) + 'h' : ''}</div>
+          </div>
+          <div class="text-end">
+            <small class="text-muted d-block">${escHtml(r.record_date)}</small>
+            ${r.cost ? `<small class="text-success">¥${fmtNum(r.cost)}</small>` : ''}
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-2">
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${escHtml(r.id)}', '${escHtml(r.maintenance_type_name)}')">削除</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { showError(content, e.message); }
+}
+
+async function loadSchedules() {
+  const content = document.getElementById('content');
+  showLoading(content);
+  try {
+    const list = await API.getSchedules({ status: 'active' });
+    if (list.length === 0) {
+      content.innerHTML = `<div class="empty-state"><i class="bi bi-calendar-check"></i>スケジュールがありません</div>`;
+      return;
+    }
+    content.innerHTML = list.map(s => `
+      <div class="list-item ${s.isOverdue ? 'border-danger border' : ''}">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            ${s.isOverdue ? '<span class="badge bg-danger me-1">期限超過</span>' : ''}
+            <div class="title">${escHtml(s.equipment_name)}</div>
+            <div class="sub">${escHtml(s.maintenance_type_name)}</div>
+          </div>
+          <small class="${s.isOverdue ? 'text-danger fw-bold' : 'text-muted'}">${escHtml(s.scheduled_date)}</small>
+        </div>
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn btn-sm btn-success flex-fill" onclick="completeSchedule('${escHtml(s.id)}')">
+            <i class="bi bi-check-lg me-1"></i>完了
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteSchedule('${escHtml(s.id)}')">削除</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { showError(content, e.message); }
+}
+
+function openForm(type = null) {
+  const t = type || currentTab;
+  document.getElementById('maintId').value = '';
+  document.getElementById('maintFormType').value = t === 'schedules' ? 'schedule' : 'record';
+  document.getElementById('formTitle').textContent = t === 'schedules' ? 'スケジュールを追加' : '整備記録を追加';
+  document.getElementById('recordFields').style.display  = t === 'schedules' ? 'none' : '';
+  document.getElementById('scheduleFields').style.display = t === 'schedules' ? '' : 'none';
+  document.getElementById('maintDate').value = today();
+  document.getElementById('schedDate').value = today();
+
+  document.getElementById('maintEquipment').innerHTML =
+    '<option value="">機械を選択</option>' + buildOptions(masters.equipment_items || [], 'id', 'name', '');
+
+  // masters.equipment_items がなければ取得
+  if (!masters.equipment_items) {
+    API.getEquipment().then(list => {
+      masters.equipment_items = list;
+      document.getElementById('maintEquipment').innerHTML =
+        '<option value="">機械を選択</option>' + buildOptions(list, 'id', 'name', '');
+    });
+  }
+
+  document.getElementById('maintType').innerHTML =
+    '<option value="">種別を選択</option>' + buildOptions(masters.maintenance_types, 'id', 'name', '');
+
+  document.getElementById('maintInventory').innerHTML =
+    '<option value="">なし</option>' + buildOptions(masters.inventory_items, 'id', 'name', '');
+
+  document.getElementById('maintInventory').onchange = () => {
+    const v = document.getElementById('maintInventory').value;
+    document.getElementById('usedQtyGroup').style.display = v ? '' : 'none';
+  };
+  document.getElementById('usedQtyGroup').style.display = 'none';
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('formModal')).show();
+}
+
+async function saveMaint() {
+  const formType = document.getElementById('maintFormType').value;
+  const equip = document.getElementById('maintEquipment').value;
+  const mtype = document.getElementById('maintType').value;
+  if (!equip || !mtype) { alert('機械と整備種別を選択してください'); return; }
+
+  try {
+    if (formType === 'schedule') {
+      const date = document.getElementById('schedDate').value;
+      if (!date) { alert('予定日を入力してください'); return; }
+      await API.saveSchedule({
+        id: document.getElementById('maintId').value,
+        equipment_id: equip,
+        maintenance_type_id: mtype,
+        scheduled_date: date,
+        interval_days: document.getElementById('schedIntervalDays').value,
+        interval_hours: document.getElementById('schedIntervalHours').value,
+        description: document.getElementById('maintDesc').value
+      });
+    } else {
+      const date = document.getElementById('maintDate').value;
+      if (!date) { alert('実施日を入力してください'); return; }
+      await API.saveMaintenance({
+        id: document.getElementById('maintId').value,
+        equipment_id: equip,
+        maintenance_type_id: mtype,
+        record_date: date,
+        hours_at_service: document.getElementById('maintHours').value,
+        cost: document.getElementById('maintCost').value,
+        performed_by: document.getElementById('maintPerformedBy').value,
+        shop_name: document.getElementById('maintShop').value,
+        next_service_date: document.getElementById('maintNextDate').value,
+        used_inventory_id: document.getElementById('maintInventory').value,
+        used_quantity: document.getElementById('maintUsedQty').value,
+        description: document.getElementById('maintDesc').value
+      });
+    }
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('formModal')).hide();
+    showToast('保存しました');
+    await getMasters(true); // キャッシュ更新
+    masters = await getMasters(true);
+    loadContent();
+  } catch(e) {
+    alert('保存エラー: ' + e.message);
+  }
+}
+
+async function completeSchedule(id) {
+  if (!await confirmDialog('このスケジュールを完了にしますか？\n（整備記録に自動登録されます）')) return;
+  try {
+    await API.completeSchedule(id);
+    showToast('完了しました！整備記録に登録しました');
+    loadSchedules();
+    updateNavBadges();
+  } catch(e) { alert(e.message); }
+}
+
+async function deleteRecord(id, name) {
+  if (!await confirmDialog(`「${name}」の整備記録を削除しますか？`)) return;
+  await API.deleteMaintenance(id);
+  showToast('削除しました');
+  loadRecords();
+}
+
+async function deleteSchedule(id) {
+  if (!await confirmDialog('このスケジュールを削除しますか？')) return;
+  await API.deleteSchedule(id);
+  showToast('削除しました');
+  loadSchedules();
+  updateNavBadges();
+}
+
+loadPage();
+</script>
+</body>
+</html>

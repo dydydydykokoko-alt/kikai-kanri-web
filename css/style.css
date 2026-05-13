@@ -1,0 +1,163 @@
+/* ============================================================
+   機械設備管理 カスタムスタイル
+   ============================================================ */
+
+:root {
+  --primary: #198754;
+  --bottom-nav-h: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
+  -webkit-text-size-adjust: 100%;
+  background: #f8f9fa;
+}
+
+/* ============ トップナビ ============ */
+.navbar-brand { font-weight: 700; font-size: 1.1rem; }
+
+/* ============ 下タブバー（スマホ） ============ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(var(--bottom-nav-h) + var(--safe-bottom));
+  background: #fff;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  align-items: flex-start;
+  z-index: 1030;
+  padding-bottom: var(--safe-bottom);
+}
+.bottom-nav .nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: var(--bottom-nav-h);
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 0.65rem;
+  position: relative;
+  transition: color .15s;
+}
+.bottom-nav .nav-item.active,
+.bottom-nav .nav-item:active { color: var(--primary); }
+.bottom-nav .nav-item i { font-size: 1.4rem; margin-bottom: 2px; }
+.bottom-nav .badge {
+  position: absolute;
+  top: 6px; right: calc(50% - 18px);
+  font-size: 0.6rem;
+  padding: 2px 5px;
+}
+
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  body { padding-bottom: 0; }
+}
+
+/* ============ カード ============ */
+.card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-radius: 12px; }
+.card-header { background: transparent; border-bottom: 1px solid #f0f0f0; font-weight: 600; }
+
+/* ============ リストアイテム ============ */
+.list-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+.list-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.list-item .title { font-weight: 600; font-size: 0.95rem; }
+.list-item .sub { font-size: 0.8rem; color: #6c757d; }
+
+/* ============ ステータスバッジ ============ */
+.badge-overdue { background: #dc3545 !important; }
+.badge-soon    { background: #fd7e14 !important; }
+.badge-ok      { background: #198754 !important; }
+
+/* ============ セクションヘッダ ============ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 6px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--primary);
+}
+.section-header h6 { margin: 0; color: var(--primary); font-weight: 700; }
+
+/* ============ フォーム ============ */
+.form-control, .form-select {
+  border-radius: 8px;
+  border-color: #dee2e6;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 .2rem rgba(25,135,84,.2);
+}
+
+/* ============ ボタン ============ */
+.btn { border-radius: 8px; }
+.btn-primary { background: var(--primary); border-color: var(--primary); }
+.btn-fab {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 16px);
+  right: 16px;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  z-index: 1020;
+}
+@media (min-width: 768px) {
+  .btn-fab { bottom: 24px; }
+}
+
+/* ============ テーブル（PC幅以上） ============ */
+.table-responsive { border-radius: 10px; overflow: hidden; }
+.table { margin: 0; }
+.table thead th { background: #f8f9fa; font-size: 0.82rem; white-space: nowrap; }
+
+/* ============ ダッシュボード数値 ============ */
+.stat-card { text-align: center; padding: 20px 12px; }
+.stat-card .stat-num { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+.stat-card .stat-label { font-size: 0.78rem; color: #6c757d; margin-top: 4px; }
+
+/* ============ ローディング ============ */
+.spinner-border-sm { width: 1rem; height: 1rem; }
+
+/* ============ ページタイトル ============ */
+.page-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 12px 0 8px;
+  color: #333;
+}
+
+/* ============ 空リスト ============ */
+.empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: #adb5bd;
+}
+.empty-state i { font-size: 3rem; display: block; margin-bottom: 12px; }
+
+/* ============ アワーメーター ============ */
+.hours-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ============ 在庫警告 ============ */
+.stock-low { color: #dc3545; font-weight: 600; }
+.stock-ok  { color: #198754; }

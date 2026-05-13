@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>設定 - 機械設備管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-success px-3">
+  <span class="navbar-brand"><i class="bi bi-wrench-adjustable me-2"></i>機械設備管理</span>
+  <div class="d-none d-md-flex gap-3">
+    <a href="index.html"       class="nav-link text-white">ホーム</a>
+    <a href="equipment.html"   class="nav-link text-white">機械台帳</a>
+    <a href="maintenance.html" class="nav-link text-white">整備</a>
+    <a href="inventory.html"   class="nav-link text-white">在庫</a>
+    <a href="settings.html"    class="nav-link text-white fw-bold">設定</a>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 pt-3">
+  <div class="page-title"><i class="bi bi-gear me-2 text-success"></i>設定</div>
+  <div id="content">
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>読み込み中...
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav d-md-none">
+  <a href="index.html" class="nav-item"><i class="bi bi-house-fill"></i>ホーム</a>
+  <a href="equipment.html" class="nav-item"><i class="bi bi-truck"></i>機械</a>
+  <a href="maintenance.html" class="nav-item">
+    <i class="bi bi-tools"></i>整備
+    <span id="overdueBadge" class="badge rounded-pill bg-danger" style="display:none"></span>
+  </a>
+  <a href="inventory.html" class="nav-item">
+    <i class="bi bi-box-seam"></i>在庫
+    <span id="lowstockBadge" class="badge rounded-pill bg-warning" style="display:none"></span>
+  </a>
+  <a href="menu.html" class="nav-item active"><i class="bi bi-grid"></i>メニュー</a>
+</nav>
+
+<!-- 追加モーダル -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h6 class="modal-title" id="addModalTitle">項目を追加</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="addSheet">
+        <input type="hidden" id="addId">
+        <div class="mb-3">
+          <label class="form-label fw-bold">名前 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="addName" required>
+        </div>
+        <div class="mb-3" id="sortOrderGroup">
+          <label class="form-label">表示順</label>
+          <input type="number" class="form-control" id="addSortOrder" min="0" value="0">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <button class="btn btn-success px-4" onclick="saveSetting()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 確認ダイアログ -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body py-4 text-center" id="confirmMsg"></div>
+      <div class="modal-footer border-0 justify-content-center gap-2">
+        <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">キャンセル</button>
+        <button class="btn btn-danger px-4" id="confirmOkBtn">削除する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1100">
+  <div id="toast" class="toast align-items-center text-bg-success border-0">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+async function loadPage() {
+  const content = document.getElementById('content');
+  try {
+    const settings = await API.getSettings();
+    content.innerHTML = `
+      ${buildSection('machine_types', '機械種別', settings.machine_types, true)}
+      ${buildSection('maintenance_types', '整備種別', settings.maintenance_types, true)}
+      ${buildSection('fuel_types', '燃料種別', settings.fuel_types, false)}
+
+      <div class="card mt-3 mb-4">
+        <div class="card-header"><i class="bi bi-database me-1"></i>データ管理</div>
+        <div class="card-body">
+          <p class="text-muted small">初回セットアップ時に初期データ（機械種別・整備種別・燃料種別）を登録します。</p>
+          <button class="btn btn-outline-success btn-sm" onclick="initDb()">
+            <i class="bi bi-arrow-clockwise me-1"></i>初期データを登録
+          </button>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    showError(content, e.message);
+  }
+}
+
+function buildSection(sheet, title, items, hasSortOrder) {
+  const rows = items.map(item => `
+    <div class="d-flex align-items-center py-2 border-bottom">
+      <span class="flex-fill">${escHtml(item.name)}</span>
+      <button class="btn btn-sm btn-outline-secondary me-1" onclick="openEdit('${escHtml(sheet)}', '${escHtml(item.id)}', '${escHtml(item.name)}', ${item.sort_order || 0}, ${hasSortOrder})">
+        <i class="bi bi-pencil"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteSetting('${escHtml(sheet)}', '${escHtml(item.id)}', '${escHtml(item.name)}')">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>`).join('') || '<div class="text-muted small py-2">項目がありません</div>';
+
+  return `
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>${escHtml(title)}</span>
+        <button class="btn btn-sm btn-success" onclick="openAdd('${escHtml(sheet)}', '${escHtml(title)}', ${hasSortOrder})">
+          <i class="bi bi-plus-lg me-1"></i>追加
+        </button>
+      </div>
+      <div class="card-body py-1 px-3">${rows}</div>
+    </div>`;
+}
+
+function openAdd(sheet, title, hasSortOrder) {
+  document.getElementById('addSheet').value = sheet;
+  document.getElementById('addId').value    = '';
+  document.getElementById('addName').value  = '';
+  document.getElementById('addSortOrder').value = '0';
+  document.getElementById('addModalTitle').textContent = title + 'を追加';
+  document.getElementById('sortOrderGroup').style.display = hasSortOrder ? '' : 'none';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
+}
+
+function openEdit(sheet, id, name, sortOrder, hasSortOrder) {
+  document.getElementById('addSheet').value = sheet;
+  document.getElementById('addId').value    = id;
+  document.getElementById('addName').value  = name;
+  document.getElementById('addSortOrder').value = sortOrder;
+  document.getElementById('addModalTitle').textContent = '項目を編集';
+  document.getElementById('sortOrderGroup').style.display = hasSortOrder ? '' : 'none';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
+}
+
+async function saveSetting() {
+  const sheet = document.getElementById('addSheet').value;
+  const id    = document.getElementById('addId').value;
+  const name  = document.getElementById('addName').value.trim();
+  if (!name) { alert('名前を入力してください'); return; }
+  try {
+    await API.saveSetting(sheet, {
+      id,
+      name,
+      sort_order: document.getElementById('addSortOrder').value
+    });
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).hide();
+    showToast('保存しました');
+    loadPage();
+    getMasters(true); // キャッシュリセット
+  } catch(e) { alert(e.message); }
+}
+
+async function deleteSetting(sheet, id, name) {
+  if (!await confirmDialog(`「${name}」を削除しますか？`)) return;
+  try {
+    await API.deleteSetting(sheet, id);
+    showToast('削除しました');
+    loadPage();
+    getMasters(true);
+  } catch(e) { alert(e.message); }
+}
+
+async function initDb() {
+  if (!await confirmDialog('初期データ（機械種別・整備種別・燃料種別）を登録しますか？\n既存データは変更されません。')) return;
+  try {
+    await API.initDb();
+    showToast('初期データを登録しました');
+    loadPage();
+    getMasters(true);
+  } catch(e) { alert(e.message); }
+}
+
+loadPage();
+</script>
+</body>
+</html>
