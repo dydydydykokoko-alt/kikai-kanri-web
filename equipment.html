@@ -107,10 +107,9 @@
                 <i class="bi bi-camera-fill" style="font-size:2.5rem;color:#ced4da"></i>
                 <div class="upload-hint">タップして写真を選択<br><small>カメラで撮影またはアルバムから選択</small></div>
               </div>
-              <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto(this)">
+              <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
             </div>
-            <input type="hidden" id="photoBase64">
-            <input type="hidden" id="photoMimeType">
+            <input type="hidden" id="photoDataUrl">
           </div>
 
           <div class="mb-3">
@@ -346,14 +345,13 @@ async function openForm(eq = null) {
   document.getElementById('equipCurrentHours').value = eq ? eq.current_hours : '';
   document.getElementById('equipTankCapacity').value = eq ? eq.fuel_tank_capacity : '';
   document.getElementById('equipNotes').value        = eq ? eq.notes : '';
-  document.getElementById('photoBase64').value       = '';
-  document.getElementById('photoMimeType').value     = '';
+  document.getElementById('photoDataUrl').value      = '';
 
   // 写真プレビュー
   const area = document.getElementById('photoUploadArea');
   if (eq && eq.photo_url) {
     document.getElementById('photoPreview').innerHTML =
-      `<img src="${escHtml(eq.photo_url)}" class="img-fluid rounded" style="max-height:180px">
+      `<img src="${eq.photo_url}" class="img-fluid rounded" style="max-height:180px">
        <div class="upload-hint mt-2">タップして写真を変更</div>`;
     area.classList.add('has-photo');
   } else {
@@ -373,31 +371,27 @@ async function openForm(eq = null) {
   bootstrap.Modal.getOrCreateInstance(document.getElementById('formModal')).show();
 }
 
-// 写真プレビュー＆圧縮
+// 写真プレビュー＆圧縮（スプレッドシート保存用に小さく圧縮）
 function previewPhoto(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    // Canvasで圧縮（最大1200px）
     const img = new Image();
     img.onload = () => {
-      const MAX = 1200;
+      // 最大500px・品質0.65に圧縮（スプレッドシートセルに収まるサイズ）
+      const MAX = 500;
       let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else { w = Math.round(w * MAX / h); h = MAX; }
-      }
+      if (w > h) { h = Math.round(h * Math.min(MAX,w) / w); w = Math.min(MAX,w); }
+      else        { w = Math.round(w * Math.min(MAX,h) / h); h = Math.min(MAX,h); }
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.8);
-      const base64 = compressed.split(',')[1];
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
 
-      document.getElementById('photoBase64').value  = base64;
-      document.getElementById('photoMimeType').value = 'image/jpeg';
+      document.getElementById('photoDataUrl').value = dataUrl;
       document.getElementById('photoPreview').innerHTML =
-        `<img src="${compressed}" class="img-fluid rounded" style="max-height:180px">
+        `<img src="${dataUrl}" class="img-fluid rounded" style="max-height:180px">
          <div class="upload-hint mt-2">タップして写真を変更</div>`;
       document.getElementById('photoUploadArea').classList.add('has-photo');
     };
@@ -414,6 +408,7 @@ async function saveEquipment() {
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>保存中...';
 
+  const photoDataUrl = document.getElementById('photoDataUrl').value;
   const data = {
     id:              document.getElementById('equipId').value,
     name,
@@ -427,20 +422,12 @@ async function saveEquipment() {
     fuel_type_id:    document.getElementById('equipFuelType').value,
     fuel_tank_capacity: document.getElementById('equipTankCapacity').value,
     notes:           document.getElementById('equipNotes').value,
+    // 写真あり→新しいDataURL、写真なし変更なし→undefined（既存保持）
+    photo_url: photoDataUrl || undefined,
   };
 
   try {
-    const result = await API.saveEquipment(data);
-    const savedId = result.id;
-
-    // 写真がある場合はアップロード
-    const base64 = document.getElementById('photoBase64').value;
-    const mimeType = document.getElementById('photoMimeType').value;
-    if (base64 && savedId) {
-      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>写真をアップロード中...';
-      await API.post('saveEquipmentPhoto', { id: savedId, base64, mimeType });
-    }
-
+    await API.saveEquipment(data);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('formModal')).hide();
     showToast(data.id ? '更新しました' : '登録しました');
     loadList();

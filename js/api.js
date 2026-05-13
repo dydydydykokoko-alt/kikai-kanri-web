@@ -1,20 +1,47 @@
 // ============================================================
-// GAS API 通信モジュール
+// GAS API 通信モジュール（LocalStorageキャッシュ付き）
 // ============================================================
 
+const CACHE_TTL = { getDashboard: 60, getMasters: 300, getEquipment: 120,
+  getMaintenance: 60, getSchedules: 60, getOperations: 60, getFuel: 60,
+  getInventory: 60, getSettings: 300 };
+
+function _cacheGet(key) {
+  try {
+    const s = localStorage.getItem('api_' + key);
+    if (!s) return null;
+    const { data, exp } = JSON.parse(s);
+    return Date.now() < exp ? data : null;
+  } catch(e) { return null; }
+}
+function _cacheSet(key, data, ttl) {
+  try { localStorage.setItem('api_' + key, JSON.stringify({ data, exp: Date.now() + ttl * 1000 })); }
+  catch(e) {}
+}
+function _cacheKey(action, params) {
+  return action + (params ? '_' + JSON.stringify(params) : '');
+}
+
 const API = {
-  // GETリクエスト
-  async get(action, params = {}) {
+  // GETリクエスト（キャッシュ付き）
+  async get(action, params = {}, forceRefresh = false) {
+    const ckey = _cacheKey(action, params);
+    if (!forceRefresh) {
+      const cached = _cacheGet(ckey);
+      if (cached !== null) return cached;
+    }
     const url = new URL(GAS_URL);
     url.searchParams.set('action', action);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     const res = await fetch(url.toString(), { redirect: 'follow' });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    const ttl = CACHE_TTL[action] || 60;
+    _cacheSet(ckey, data, ttl);
     return data;
   },
 
-  // POSTリクエスト
+  // POSTリクエスト（キャッシュなし・関連キャッシュ削除）
   async post(action, body = {}) {
     const res = await fetch(GAS_URL, {
       method: 'POST',
@@ -24,20 +51,23 @@ const API = {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    // 書き込み後はキャッシュをクリア
+    try {
+      Object.keys(localStorage).filter(k => k.startsWith('api_')).forEach(k => localStorage.removeItem(k));
+    } catch(e) {}
     return data;
   },
 
   // ダッシュボード
-  getDashboard:      ()       => API.get('getDashboard'),
-  getMasters:        ()       => API.get('getMasters'),
-  getSettings:       ()       => API.get('getSettings'),
+  getDashboard:      (f)     => API.get('getDashboard', {}, f),
+  getMasters:        (f)     => API.get('getMasters', {}, f),
+  getSettings:       ()      => API.get('getSettings'),
 
   // 機械台帳
-  getEquipment:        (p={})                      => API.get('getEquipment', p),
-  getEquipmentById:    (id)                        => API.get('getEquipmentById', { id }),
-  saveEquipment:       (data)                      => API.post('saveEquipment', { data }),
-  deleteEquipment:     (id)                        => API.post('deleteEquipment', { id }),
-  saveEquipmentPhoto:  (id, base64, mimeType)      => API.post('saveEquipmentPhoto', { id, base64, mimeType }),
+  getEquipment:        (p={})                 => API.get('getEquipment', p),
+  getEquipmentById:    (id)                   => API.get('getEquipmentById', { id }),
+  saveEquipment:       (data)                 => API.post('saveEquipment', { data }),
+  deleteEquipment:     (id)                   => API.post('deleteEquipment', { id }),
 
   // 整備記録
   getMaintenance:    (p={})  => API.get('getMaintenance', p),
