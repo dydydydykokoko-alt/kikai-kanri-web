@@ -64,7 +64,18 @@
           <div class="row g-2 mb-3">
             <div class="col-6">
               <label class="form-label">カテゴリ</label>
-              <input type="text" class="form-control" id="invCategory" placeholder="例: オイル">
+              <select class="form-select" id="invCategory">
+                <option value="">選択してください</option>
+                <option>オイル・液体</option>
+                <option>フィルター</option>
+                <option>ベルト・チェーン</option>
+                <option>タイヤ・チューブ</option>
+                <option>バッテリー</option>
+                <option>グリス・潤滑剤</option>
+                <option>工具・部品</option>
+                <option>消耗品</option>
+                <option>その他</option>
+              </select>
             </div>
             <div class="col-6">
               <label class="form-label">品番</label>
@@ -78,7 +89,16 @@
           <div class="row g-2 mb-3">
             <div class="col-4">
               <label class="form-label">単位</label>
-              <input type="text" class="form-control" id="invUnit" placeholder="個">
+              <select class="form-select" id="invUnit">
+                <option value="">-</option>
+                <option>個</option>
+                <option>本</option>
+                <option>L</option>
+                <option>ml</option>
+                <option>kg</option>
+                <option>g</option>
+                <option>袋</option>
+              </select>
             </div>
             <div class="col-4">
               <label class="form-label">現在庫</label>
